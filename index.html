@@ -1,102 +1,59 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EasyTier 命令生成器</title>
-    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <title>EasyTier 配置生成器</title>
+    <script src="https://lf26-cdn-tos.bytecdntp.com/cdn/expire-1-M/vue/3.2.31/vue.global.min.js"></script>
     <script src="https://unpkg.com/naive-ui"></script>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap">
     <style>
-        body { margin: 0; font-family: sans-serif; }
-        .container { max-width: 600px; margin: 50px auto; padding: 20px; }
-        .code-block { background: #1e1e1e; color: #d4d4d4; padding: 15px; border-radius: 8px; font-family: 'Fira Code', monospace; font-size: 14px; margin: 10px 0; white-space: pre-wrap; word-break: break-all; }
+        body { background-color: #f5f5f7; margin: 0; padding: 20px; font-family: sans-serif; }
+        .main-card { max-width: 500px; margin: 40px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        pre { background: #1e1e1e; color: #9cdcf0; padding: 15px; border-radius: 5px; overflow-x: auto; font-size: 13px; }
     </style>
 </head>
 <body>
     <div id="app">
-        <n-config-provider :theme="theme">
-            <n-global-style />
-            <div class="container">
-                <n-flex vertical size="large">
-                    <n-h1 style="text-align: center">EasyTier 命令生成器</n-h1>
-                    
-                    <n-select v-model:value="isDHCP" :options="isDHCPOptions" label="IP分配模式" />
+        <n-config-provider>
+            <div class="main-card">
+                <n-h2>EasyTier 命令生成器</n-h2>
+                <n-space vertical size="large">
                     <n-input v-model:value="username" placeholder="系统用户名 (如 root)" />
-                    <n-input v-model:value="ipAddress" placeholder="虚拟局域网 IP" :disabled="isDHCP" />
-                    <n-input v-model:value="peerAddress" placeholder="Peer 地址 (如 tcp://public.easytier.top:11010)" />
-                    <n-input v-model:value="networkName" placeholder="网路名称" />
-                    <n-input v-model:value="networkSecret" type="password" placeholder="网路密码" show-password-on="mousedown" />
-
-                    <n-divider>生成结果</n-divider>
-
-                    <div v-if="easytierCommand">
-                        <n-text strong>启动命令：</n-text>
-                        <div class="code-block">{{ easytierCommand }}</div>
-                        <n-button block type="primary" @click="copy(easytierCommand)">复制命令</n-button>
-                    </div>
-
-                    <div v-if="easytierConfig">
-                        <n-text strong>Systemd 服务配置：</n-text>
-                        <div class="code-block">{{ easytierConfig }}</div>
-                        <n-button block @click="copy(easytierConfig)">复制配置内容</n-button>
-                    </div>
-                </n-flex>
+                    <n-input v-model:value="ipAddress" placeholder="想要分配的虚拟 IP (如 10.1.1.2)" />
+                    <n-input v-model:value="peerAddress" placeholder="服务器 Peer 地址" />
+                    <n-input v-model:value="networkName" placeholder="网络名称" />
+                    <n-input v-model:value="networkSecret" type="password" placeholder="网络密码" />
+                    
+                    <n-divider>生成的命令</n-divider>
+                    <pre v-if="cmd">{{ cmd }}</pre>
+                    <n-button type="primary" block @click="copy">复制命令</n-button>
+                </n-space>
             </div>
         </n-config-provider>
     </div>
 
     <script>
         const { createApp, ref, computed } = Vue;
-        const { createDiscreteApi, darkTheme } = naive;
-
-        const app = createApp({
+        createApp({
             setup() {
                 const username = ref('root');
                 const ipAddress = ref('10.1.1.1');
                 const peerAddress = ref('tcp://public.easytier.top:11010');
-                const isDHCP = ref(false);
                 const networkName = ref('');
                 const networkSecret = ref('');
-                const theme = ref(null); // 默认亮色
 
-                const isDHCPOptions = [
-                    { label: '手动指定 IP', value: false },
-                    { label: 'DHCP 模式', value: true }
-                ];
-
-                const { message } = createDiscreteApi(['message']);
-
-                const easytierCommand = computed(() => {
-                    if (!username.value || !peerAddress.value) return '';
-                    let bin = username.value === 'root' ? '/root/.cargo/bin/easytier-core' : `/home/${username.value}/.cargo/bin/easytier-core`;
-                    let cmd = `sudo ${bin}`;
-                    cmd += isDHCP.value ? ' -d' : ` -i ${ipAddress.value}`;
-                    if (networkName.value) cmd += ` --network-name ${networkName.value}`;
-                    if (networkSecret.value) cmd += ` --network-secret ${networkSecret.value}`;
-                    cmd += ` -p ${peerAddress.value}`;
-                    return cmd;
+                const cmd = computed(() => {
+                    let path = username.value === 'root' ? '/root' : `/home/${username.value}`;
+                    return `sudo ${path}/.cargo/bin/easytier-core -i ${ipAddress.value} --network-name ${networkName.value} --network-secret ${networkSecret.value} -p ${peerAddress.value}`;
                 });
 
-                const easytierConfig = computed(() => {
-                    const cmd = easytierCommand.value.replace('sudo ', '');
-                    if (!cmd) return '';
-                    return `[Unit]\nDescription=EasyTier Service\nAfter=network.target\n\n[Service]\nType=simple\nExecStart=${cmd}\n\n[Install]\nWantedBy=multi-user.target`;
-                });
-
-                const copy = (text) => {
-                    navigator.clipboard.writeText(text);
-                    message.success('已复制到剪贴板');
+                const copy = () => {
+                    navigator.clipboard.writeText(cmd.value);
+                    alert('已复制！');
                 };
 
-                return {
-                    username, ipAddress, peerAddress, isDHCP, networkName, networkSecret,
-                    isDHCPOptions, easytierCommand, easytierConfig, copy, theme
-                };
+                return { username, ipAddress, peerAddress, networkName, networkSecret, cmd, copy };
             }
-        });
-        app.use(naive);
-        app.mount('#app');
+        }).use(naive).mount('#app');
     </script>
 </body>
 </html>
