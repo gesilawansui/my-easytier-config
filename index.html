@@ -1,91 +1,12 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <title>EasyTier 配置生成器</title>
-    <script src="https://cdn.staticfile.org/vue/3.2.31/vue.global.min.js"></script>
-    <style>
-        body { font-family: sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; padding: 20px; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 100%; max-width: 450px; }
-        .input-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-size: 14px; color: #666; }
-        input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
-        .result-box { background: #282c34; color: #61afef; padding: 15px; border-radius: 6px; font-family: monospace; font-size: 12px; word-break: break-all; margin-top: 20px; min-height: 40px; }
-        button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; margin-top: 10px; }
-        button:hover { background: #0056b3; }
-        [v-cloak] { display: none; } /* 防止闪烁显示 {{ cmd }} */
-    </style>
-</head>
-<body>
-    <div id="app" v-cloak>
-        <div class="card">
-            <h2 style="text-align: center; margin-top: 0;">EasyTier 配置生成器</h2>
-            
-            <div class="input-group">
-                <label>系统用户名</label>
-                <input v-model="username" placeholder="如 root 或 pi">
-            </div>
-            <div class="input-group">
-                <label>虚拟 IP 地址</label>
-                <input v-model="ip" placeholder="如 10.1.1.1">
-            </div>
-            <div class="input-group">
-                <label>Peer 节点地址</label>
-                <input v-model="peer" placeholder="tcp://public.easytier.top:11010">
-            </div>
-            <div class="input-group">
-                <label>网络名称 (Network Name)</label>
-                <input v-model="netName" placeholder="随便起个名字">
-            </div>
-            <div class="input-group">
-                <label>网络密码 (Network Secret)</label>
-                <input v-model="netSecret" type="text" placeholder="设置一个密码">
-            </div>
-
-            <div style="margin-top: 20px; font-weight: bold; font-size: 14px;">生成的启动命令：</div>
-            <div class="result-box">
-                {{ fullCommand }}
-            </div>
-            
-            <button @click="copyText">复制命令</button>
-        </div>
-    </div>
-
-    <script>
-        // 确保 Vue 加载后再初始化
-        window.onload = function() {
-            const { createApp, ref, computed } = Vue;
-            createApp({
-                setup() {
-                    const username = ref('root');
-                    const ip = ref('10.1.1.1');
-                    const peer = ref('tcp://public.easytier.top:11010');
-                    const netName = ref('');
-                    const netSecret = ref('');
-
-                    const fullCommand = computed(() => {
-                        const path = username.value === 'root' ? '/root' : `/home/${username.value}`;
-                        let res = `sudo ${path}/.cargo/bin/easytier-core -i ${ip.value}`;
-                        if (netName.value) res += ` --network-name ${netName.value}`;
-                        if (netSecret.value) res += ` --network-secret ${netSecret.value}`;
-                        res += ` -p ${peer.value}`;
-                        return res;
-                    });
-
-                    const copyText = () => {
-                        const el = document.createElement('textarea');
-                        el.value = fullCommand.value;
-                        document.body.appendChild(el);
-                        el.select();
-                        document.execCommand('copy');
-                        document.body.removeChild(el);
-                        alert('命令已复制到剪贴板！');
-                    };
-
-                    return { username, ip, peer, netName, netSecret, fullCommand, copyText };
-                }
-            }).mount('#app');
-        };
-    </script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EasyTier 命令生成器</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
 </html>
