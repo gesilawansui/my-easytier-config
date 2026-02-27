@@ -1,0 +1,22 @@
+{
+  "name": "easytier-config-generator",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "vue": "^3.4.0",
+    "naive-ui": "^2.38.0",
+    "@vueuse/core": "^10.9.0",
+    "lucide-vue-next": "^0.363.0",
+    "highlight.js": "^11.9.0",
+    "vfonts": "^0.0.3"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.0",
+    "vite": "^5.2.0"
+  }
+}
